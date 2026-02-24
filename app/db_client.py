@@ -1,0 +1,15 @@
+import requests
+from app.config import DB_SERVICE_URL
+
+def create_appointment(data: dict):
+    response = requests.post(
+        f"{DB_SERVICE_URL}/appointments",
+        params=data
+    )
+    response.raise_for_status()
+    return response.json()
+
+def get_all_appointments():
+    response = requests.get(f"{DB_SERVICE_URL}/appointments")
+    response.raise_for_status()
+    return response.json()
