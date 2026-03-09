@@ -14,6 +14,14 @@ def get_all_appointments():
     response.raise_for_status()
     return response.json()
 
+def update_appointment(appointment_id: int, data: dict):
+    response = requests.put(
+        f"{DB_SERVICE_URL}/appointments/{appointment_id}",
+        json=data
+    )
+    response.raise_for_status()
+    return response.json()
+
 def cancel_appointment(appointment_id: int):
     response = requests.delete(
         f"{DB_SERVICE_URL}/appointments/{appointment_id}"
