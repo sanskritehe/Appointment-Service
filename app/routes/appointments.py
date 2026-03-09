@@ -1,8 +1,9 @@
 from fastapi import APIRouter
-from app.models import AppointmentCreate
+from app.models import AppointmentCreate, AppointmentUpdate
 from app.services.booking_service import (
     book_appointment,
     list_appointments,
+    update_booking,
     cancel_booking
 )
 
@@ -19,6 +20,12 @@ def create_appointment(req: AppointmentCreate):
 @router.get("/")
 def get_appointments():
     return list_appointments()
+
+
+# Update an appointment by ID
+@router.put("/{appointment_id}")
+def update_appointment_by_id(appointment_id: int, req: AppointmentUpdate):
+    return update_booking(appointment_id, req.dict())
 
 
 # Cancel an appointment by ID
