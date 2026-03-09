@@ -13,3 +13,9 @@ def get_all_appointments():
     response = requests.get(f"{DB_SERVICE_URL}/appointments")
     response.raise_for_status()
     return response.json()
+
+def cancel_appointment(appointment_id: int):
+    response = requests.delete(
+        f"{DB_SERVICE_URL}/appointments/{appointment_id}"
+    )
+    return response.json()
