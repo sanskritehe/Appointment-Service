@@ -5,81 +5,145 @@ You are an AI development agent working on the **Appointment-Service** repositor
 ## Goal
 
 Implement REST APIs for managing appointments and integrate with the **Appointment-Database-Service**.
+This service handles **business logic** and calls the database service for data persistence.
 
-## Context
+Database Service URL:
 
-Requirements are defined in:
-
-* Jira issue describing appointment APIs
-* Confluence page containing the Appointment API schema
-
-The appointment service is responsible for:
-
-* Handling business logic
-* Calling the database service APIs
-
-Database service URL:
+```
 http://localhost:8001
+```
 
-## APIs to Implement
+---
 
-### 1. Create Appointment
+## Tech Stack
 
+* **FastAPI** – API framework
+* **Pydantic** – request validation
+* **requests** – HTTP calls to database service
+* Layered architecture (routes → services → db_client)
+
+Configuration:
+
+```python
+# app/config.py
+DB_SERVICE_URL = "http://localhost:8001"
+```
+
+---
+
+## Data Models
+
+**AppointmentCreate**
+
+```
+user : string
+time : string
+```
+
+**AppointmentUpdate**
+
+```
+time : string
+```
+
+**AppointmentResponse**
+
+```
+id : int
+user : string
+time : string
+status : string
+```
+
+---
+
+## APIs
+
+### Create Appointment
+
+```
 POST /appointments
-
-Request body:
-{
-"user_id": string,
-"doctor_id": string,
-"time_slot": string
-}
+```
 
 Flow:
 
-1. Validate request using Pydantic model
-2. Call database service API to store appointment
-3. Return stored appointment
+1. Validate request with `AppointmentCreate`
+2. Call `create_appointment()` in `db_client`
+3. Return created appointment
 
 ---
 
-### 2. Get All Appointments
+### Get All Appointments
 
+```
 GET /appointments
+```
 
 Flow:
 
-1. Call database service
-2. Return list of appointments
+1. Call `get_all_appointments()` in `db_client`
+2. Return appointment list
 
 ---
 
-### 3. Cancel Appointment
+### Update Appointment
 
-DELETE /appointments/{appointment_id}
+```
+PUT /appointments/{appointment_id}
+```
 
 Flow:
 
-1. Accept appointment_id
-2. Call database service DELETE API
-3. Return cancellation response
+1. Validate with `AppointmentUpdate`
+2. Call `update_appointment()` in `db_client`
+3. Return updated appointment
+
+---
+
+### Cancel Appointment
+
+```
+DELETE /appointments/{appointment_id}
+```
+
+Flow:
+
+1. Call `cancel_appointment()` in `db_client`
+2. Return confirmation response
+
+Example:
+
+```json
+{
+  "message": "Appointment deleted successfully",
+  "appointment_id": 5
+}
+```
 
 ---
 
 ## Architecture
 
-Follow the existing layered structure:
-
+```
 app/
-models/
-routes/
-services/
-db_client.py
+├─ models/        # Pydantic models
+├─ routes/        # FastAPI endpoints
+├─ services/      # business logic
+├─ db_client.py   # calls database service
+└─ config.py      # configuration
+```
 
-Responsibilities:
+Layer responsibilities:
 
-routes → API endpoints
-services → business logic
-db_client → calls database service
+* **routes** → API endpoints
+* **services** → business logic
+* **db_client** → calls database APIs using `requests`
+
+All external calls must include:
+
+```python
+response.raise_for_status()
+```
 
 ---
 
@@ -87,29 +151,43 @@ db_client → calls database service
 
 1. Update **db_client.py**
 
-   * Add cancel_appointment function
+   * create_appointment
+   * get_all_appointments
+   * update_appointment
+   * cancel_appointment
 
 2. Update **services/booking_service.py**
 
-   * Add cancel_booking function
+   * book_appointment
+   * list_appointments
+   * update_booking
+   * cancel_booking
 
 3. Update **routes/appointments.py**
 
-   * Add DELETE endpoint
-
-4. Ensure clean error handling using raise_for_status()
-
-5. Maintain existing project structure
+```
+POST   /appointments
+GET    /appointments
+PUT    /appointments/{appointment_id}
+DELETE /appointments/{appointment_id}
+```
 
 ---
 
 ## After Implementation
 
-1. Create new branch:
-   feature/cancel-appointment-api
+Create branch:
 
-2. Commit changes
+```
+feature/cancel-appointment-api
+```
 
-3. Push branch to GitHub
+Commit and push:
 
-4. Create Pull Request
+```
+git add .
+git commit -m "Add cancel appointment API"
+git push origin feature/cancel-appointment-api
+```
+
+Create a **Pull Request** to merge into `main`.
