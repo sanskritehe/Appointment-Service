@@ -1,143 +1,124 @@
-# Appointment Service – API Implementation Prompt
+# Generic Service Layer – CRUD Integration Prompt
 
-You are an AI development agent working on the **Appointment-Service** repository.
+You are an AI development agent working on a **Service Layer repository**.
 
 ## Goal
 
-Implement REST APIs for managing appointments and integrate with the **Appointment-Database-Service**.
-This service handles **business logic** and calls the database service for data persistence.
+Implement REST APIs that handle business logic and integrate with an external **Database Service**.
 
-Database Service URL:
+This service does NOT manage persistence directly.
 
-```
-http://localhost:8001
-```
+---
+
+## Runtime Context (Provided Dynamically)
+
+* Resource: {resource}
+* Fields: {fields}
+* Database Service URL: {db_service_url}
+
+---
+
+## Responsibilities
+
+* Validate incoming requests
+* Apply business logic
+* Call database service APIs
+* Return structured responses
 
 ---
 
 ## Tech Stack
 
-* **FastAPI** – API framework
-* **Pydantic** – request validation
-* **requests** – HTTP calls to database service
-* Layered architecture (routes → services → db_client)
-
-Configuration:
-
-```python
-# app/config.py
-DB_SERVICE_URL = "http://localhost:8001"
-```
-
----
-
-## Data Models
-
-**AppointmentCreate**
-
-```
-user : string
-time : string
-```
-
-**AppointmentUpdate**
-
-```
-time : string
-```
-
-**AppointmentResponse**
-
-```
-id : int
-user : string
-time : string
-status : string
-```
+* FastAPI
+* Pydantic
+* requests
 
 ---
 
 ## APIs
 
-### Create Appointment
+### Create
 
-```
-POST /appointments
-```
+POST /{resource}
 
 Flow:
 
-1. Validate request with `AppointmentCreate`
-2. Call `create_appointment()` in `db_client`
-3. Return created appointment
+1. Validate request body
+2. Call DB service POST /{resource}
+3. Return response
 
 ---
 
-### Get All Appointments
+### Read All
 
-```
-GET /appointments
-```
+GET /{resource}
 
 Flow:
 
-1. Call `get_all_appointments()` in `db_client`
-2. Return appointment list
+1. Call DB service GET /{resource}
+2. Return list
 
 ---
 
-### Update Appointment
+### Read by ID
 
-```
-PUT /appointments/{appointment_id}
-```
+GET /{resource}/{id}
 
 Flow:
 
-1. Validate with `AppointmentUpdate`
-2. Call `update_appointment()` in `db_client`
-3. Return updated appointment
+1. Call DB service GET /{resource}/{id}
+2. Return result
 
 ---
 
-### Cancel Appointment
+### Update
 
-```
-DELETE /appointments/{appointment_id}
-```
+PUT /{resource}/{id}
 
 Flow:
 
-1. Call `cancel_appointment()` in `db_client`
-2. Return confirmation response
+1. Validate request
+2. Call DB service PUT /{resource}/{id}
+3. Return updated response
 
-Example:
+---
 
-```json
-{
-  "message": "Appointment deleted successfully",
-  "appointment_id": 5
-}
-```
+### Delete
+
+DELETE /{resource}/{id}
+
+Flow:
+
+1. Call DB service DELETE /{resource}/{id}
+2. Return confirmation
 
 ---
 
 ## Architecture
 
-```
 app/
-├─ models/        # Pydantic models
-├─ routes/        # FastAPI endpoints
-├─ services/      # business logic
-├─ db_client.py   # calls database service
-└─ config.py      # configuration
-```
+├─ models/
+├─ routes/
+├─ services/
+├─ db_client.py
+└─ config.py
 
-Layer responsibilities:
+---
 
-* **routes** → API endpoints
-* **services** → business logic
-* **db_client** → calls database APIs using `requests`
+## Layer Responsibilities
+
+* routes → API endpoints
+* services → business logic
+* db_client → external API calls
+
+---
+
+## Implementation Rules
+
+* Use Pydantic for validation
+* Keep routes minimal
+* Place logic in services
+* Use requests for HTTP calls
 
 All external calls must include:
 
@@ -147,47 +128,17 @@ response.raise_for_status()
 
 ---
 
-## Implementation Steps
+## Validation
 
-1. Update **db_client.py**
-
-   * create_appointment
-   * get_all_appointments
-   * update_appointment
-   * cancel_appointment
-
-2. Update **services/booking_service.py**
-
-   * book_appointment
-   * list_appointments
-   * update_booking
-   * cancel_booking
-
-3. Update **routes/appointments.py**
-
-```
-POST   /appointments
-GET    /appointments
-PUT    /appointments/{appointment_id}
-DELETE /appointments/{appointment_id}
-```
+* Ensure API calls succeed
+* Handle HTTP errors properly
+* Validate request and response formats
 
 ---
 
 ## After Implementation
 
-Create branch:
-
-```
-feature/cancel-appointment-api
-```
-
-Commit and push:
-
-```
-git add .
-git commit -m "Add cancel appointment API"
-git push origin feature/cancel-appointment-api
-```
-
-Create a **Pull Request** to merge into `main`.
+* Create feature branch
+* Commit changes
+* Push to repository
+* Create Pull Request
