@@ -102,7 +102,7 @@ Create a PR with:
 
 ### Jira Ticket: KAN-17
 **Summary:** Add GET /appointments/{id} endpoint to database service
-**Status:** To Do
+**Status:** In Progress
 **Priority:** Medium
 **Labels:** none
 **URL:** https://hpe-team2.atlassian.net/browse/KAN-17
