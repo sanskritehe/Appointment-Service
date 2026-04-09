@@ -3,6 +3,12 @@ from fastapi import HTTPException
 from requests.exceptions import HTTPError
 
 
+def create_simple_appointment(data):
+    """Create appointment with simple format (user, time) - KAN-17"""
+    if not data.get("user") or not data.get("time"):
+        raise HTTPException(status_code=400, detail="Missing required fields: user, time")
+    return create_appointment(data)
+
 def validate_and_book_appointment(data):
     doctor_id = data.get("doctor_id")
     appointment_date = data.get("appointment_date")
@@ -35,4 +41,13 @@ def update_booking(appointment_id: int, data):
         raise
 
 def cancel_booking(appointment_id: int):
-    return cancel_appointment(appointment_id)
+    try:
+        cancel_appointment(appointment_id)
+        return {
+            "message": "Appointment deleted successfully",
+            "appointment_id": appointment_id
+        }
+    except HTTPError as e:
+        if e.response.status_code == 404:
+            raise HTTPException(status_code=404, detail="Appointment not found")
+        raise
