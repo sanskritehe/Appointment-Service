@@ -1,60 +1,6 @@
-### FILE: services/booking_service.py
-```python
-from app.db_client import get_appointment_by_id, update_appointment
-from fastapi import HTTPException
-from requests.exceptions import HTTPError
-from app.models import AppointmentStatus
-
-
-def patch_booking_status(appointment_id: int, data: dict):
-    """
-    Patch the status of an appointment based on business rules.
-
-    - **appointment_id**: The ID of the appointment to patch
-    - **data**: Dict containing the new status field
-
-    Throws:
-    - HTTPException 404: If appointment is not found
-    - HTTPException 400: If status transition is invalid
-    - HTTPException 422: If the request input is invalid
-
-    Returns:
-    - Updated appointment object
-    """
-    try:
-        appointment = get_appointment_by_id(appointment_id)
-    except HTTPError as e:
-        if e.response.status_code == 404:
-            raise HTTPException(status_code=404, detail="Appointment not found")
-        raise
-
-    # Extract and validate new status
-    new_status = data.get("status")
-    if not new_status or new_status not in AppointmentStatus._value2member_map_:
-        raise HTTPException(status_code=422, detail="Invalid status in request body")
-
-    # Validate status transition rules
-    current_status = appointment["status"]
-    allowed_transitions = {
-        "booked": ["confirmed", "cancelled"],
-        "confirmed": ["completed", "cancelled"],
-        "completed": ["completed"],
-        "cancelled": []
-    }
-
-    if new_status not in allowed_transitions.get(current_status, []):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid status transition from {current_status} to {new_status}"
-        )
-
-    # Update appointment status in the database
-    return update_appointment(appointment_id, {"status": new_status})
-```
-
 ### FILE: models.py
 ```python
-from pydantic import BaseModel, Field, root_validator, ValidationError
+from pydantic import BaseModel, Field, root_validator, HTTPException
 from enum import Enum
 
 
@@ -113,7 +59,7 @@ class AppointmentStatusUpdate(BaseModel):
     @root_validator(pre=True)
     def validate_only_status_field(cls, values):
         if len(values) != 1 or 'status' not in values:
-            raise ValueError("Invalid request body. Only 'status' field is allowed.")
+            raise HTTPException(status_code=400, detail="Invalid request body. Only 'status' field is allowed.")
         return values
 
     class Config:
@@ -181,4 +127,61 @@ class PatientResponse(BaseModel):
     age: int
     blood_group: str
     contact: str
+
+```
+
+### FILE: services/booking_service.py
+```python
+from app.db_client import get_appointment_by_id, update_appointment
+from fastapi import HTTPException
+from requests.exceptions import HTTPError
+from app.models import AppointmentStatus
+
+
+def patch_booking_status(appointment_id: int, data: dict):
+    """
+    Patch the status of an appointment based on business rules.
+
+    - **appointment_id**: The ID of the appointment to patch
+    - **data**: Dict containing the new status field
+
+    Throws:
+    - HTTPException 404: If appointment is not found
+    - HTTPException 400: If status transition is invalid or request body contains extra fields
+
+    Returns:
+    - Updated appointment object
+    """
+    if len(data) != 1 or "status" not in data:
+        raise HTTPException(status_code=400, detail="Invalid request body. Only 'status' field is allowed.")
+
+    try:
+        appointment = get_appointment_by_id(appointment_id)
+    except HTTPError as e:
+        if e.response.status_code == 404:
+            raise HTTPException(status_code=404, detail="Appointment not found")
+        raise
+
+    # Extract and validate new status
+    new_status = data["status"]
+    if new_status not in AppointmentStatus._value2member_map_:
+        raise HTTPException(status_code=400, detail="Invalid status value in request body")
+
+    # Validate status transition rules
+    current_status = appointment["status"]
+    allowed_transitions = {
+        "booked": ["confirmed", "cancelled"],
+        "confirmed": ["completed", "cancelled"],
+        "completed": ["completed"],
+        "cancelled": []
+    }
+
+    if new_status not in allowed_transitions.get(current_status, []):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid status transition from {current_status} to {new_status}"
+        )
+
+    # Update appointment status in the database
+    return update_appointment(appointment_id, {"status": new_status})
 ```
