@@ -1,34 +1,29 @@
-from fastapi import APIRouter
-from app.models import AppointmentCreate, AppointmentUpdate
-from app.services.booking_service import (
-    book_appointment,
-    list_appointments,
-    update_booking,
-    cancel_booking
-)
+from fastapi import APIRouter, status, HTTPException, Depends
+from app.models import AppointmentStatusUpdate, AppointmentResponse
+from app.services.appointment_service import update_appointment_status as update_status_service
 
-router = APIRouter(prefix="/appointments", tags=["Appointment"])
+router = APIRouter(prefix="/appointments", tags=["Appointment-Service"])
 
+# Update appointment status (KAN-22)
+@router.patch("/{appointment_id}/status", status_code=status.HTTP_200_OK, response_model=AppointmentResponse)
+def update_appointment_status_endpoint(
+    appointment_id: int,
+    req: AppointmentStatusUpdate,
+):
+    """
+    Update the status of an existing appointment.
 
-# Create a new appointment
-@router.post("/")
-def create_appointment(req: AppointmentCreate):
-    return book_appointment(req.dict())
+    - **Path parameter**: Appointment ID
+    - **Req body**: {"status": "string"}
+    - **Allowed transitions**:
+        - booked → confirmed → completed
+        - booked → cancelled
+        - confirmed → cancelled
+    - Returns: Updated appointment object
 
-
-# Get all appointments
-@router.get("/")
-def get_appointments():
-    return list_appointments()
-
-
-# Update an appointment by ID
-@router.put("/{appointment_id}")
-def update_appointment_by_id(appointment_id: int, req: AppointmentUpdate):
-    return update_booking(appointment_id, req.dict())
-
-
-# Cancel an appointment by ID
-@router.delete("/{appointment_id}")
-def cancel_appointment_by_id(appointment_id: int):
-    return cancel_booking(appointment_id)
+    Throws:
+    - HTTPException 400: If status transition is invalid
+    - HTTPException 404: If the appointment does not exist
+    """
+    updated_appointment = update_status_service(appointment_id, req.dict())
+    return AppointmentResponse(**updated_appointment)
