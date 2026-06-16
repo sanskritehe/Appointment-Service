@@ -2,6 +2,7 @@ import strawberry
 from typing import Optional
 from app.services.booking_service import (
     book_appointment, list_appointments, update_booking, cancel_booking,
+    get_appointment_by_id
 )
 
 
@@ -32,11 +33,11 @@ class Query:
         return [Appointment(id=r["id"], user=r["user"], time=r["time"], status=r["status"]) for r in records]
 
     @strawberry.field
-    def appointment(self, id: int) -> Optional[Appointment]:
-        for r in list_appointments():
-            if r["id"] == id:
-                return Appointment(id=r["id"], user=r["user"], time=r["time"], status=r["status"])
-        return None
+    def appointmentById(self, id: int) -> Appointment:
+        appointment = get_appointment_by_id(id)
+        if appointment is None:
+            raise ValueError("Appointment not found")
+        return Appointment(id=appointment["id"], user=appointment["user"], time=appointment["time"], status=appointment["status"])
 
 
 @strawberry.type
