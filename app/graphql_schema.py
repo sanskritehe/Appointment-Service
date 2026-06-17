@@ -1,60 +1,69 @@
-import strawberry
-from typing import Optional
+from typing import List
+
+from fastapi import Depends
+from strawberry import AUTO
+from strawberry.federation import Key
+from strawberry.federation.custom_scalar import CustomScalar
+from strawberry.schema import StrawberrySchema
+
 from app.services.booking_service import (
-    book_appointment, list_appointments, update_booking, cancel_booking,
+    list_appointments,
+    book_appointment,
+    update_booking,
+    cancel_booking
 )
 
+from pydantic import BaseModel
 
-@strawberry.federation.type(keys=["id"])
-class Appointment:
-    id: int
-    user: str
-    time: str
-    status: str
-
-
-@strawberry.input
-class CreateAppointmentInput:
-    user: str
-    time: str
-
-
-@strawberry.input
-class UpdateAppointmentInput:
-    time: str
-
-
-@strawberry.type
 class Query:
-    @strawberry.field
-    def appointments(self) -> list[Appointment]:
-        records = list_appointments()
-        return [Appointment(id=r["id"], user=r["user"], time=r["time"], status=r["status"]) for r in records]
+    @strawberry.federation.type(keys=[Key("id", "ID")])
+    class Query:
+        appointments: List[str]
+        appointments_by_user: List[str]
 
-    @strawberry.field
-    def appointment(self, id: int) -> Optional[Appointment]:
-        for r in list_appointments():
-            if r["id"] == id:
-                return Appointment(id=r["id"], user=r["user"], time=r["time"], status=r["status"])
-        return None
+        @strawberry.field(resolver=lambda: "Hello, world!")
+        def message(self):
+            return StrawberrySchema._get_type(AUTO)
+            pass
 
+        @strawberry.field
+        def appointments(self) -> List[str]:
+            return list_appointments()
 
-@strawberry.type
+        @strawberry.field
+        def appointments_by_user(self, user: str) -> str:
+            # You should call your existing service function
+            # instead of making an assumption like this.
+            # This is an oversimplified example.
+            # You should return an empty list if the user does not exist.
+            result = []
+            # Call existing service function to get data
+            data = book_appointment(user)
+            if data:
+                result = data
+            return result
+
 class Mutation:
-    @strawberry.mutation
-    def create_appointment(self, input: CreateAppointmentInput) -> Appointment:
-        r = book_appointment({"user": input.user, "time": input.time})
-        return Appointment(id=r["id"], user=r["user"], time=r["time"], status=r["status"])
+    @strawberry.federation.type(keys=[Key("id", "ID")])
+    class Mutation:
+        @strawberry.mutation
+        def create_appointment(self, req: str) -> str:
+            return book_appointment(req)
 
-    @strawberry.mutation
-    def update_appointment(self, id: int, input: UpdateAppointmentInput) -> Appointment:
-        r = update_booking(id, {"time": input.time})
-        return Appointment(id=r["id"], user=r["user"], time=r["time"], status=r["status"])
+        @strawberry.mutation
+        def update_appointment_by_id(self, appointment_id: int, req: str) -> str:
+            return update_booking(appointment_id, req)
 
-    @strawberry.mutation
-    def cancel_appointment(self, id: int) -> bool:
-        cancel_booking(id)
-        return True
+        @strawberry.mutation
+        def cancel_appointment_by_id(self, appointment_id: int) -> str:
+            return cancel_booking(appointment_id)
 
+class AppointmentQuery:
+    class Query:
+        appointments: List[str]
 
-schema = strawberry.federation.Schema(query=Query, mutation=Mutation, enable_federation_2=True)
+        @strawberry.field
+        def appointments(self) -> List[str]:
+            return list_appointments()
+
+Schema = StrawberrySchema(Query, Mutation)
