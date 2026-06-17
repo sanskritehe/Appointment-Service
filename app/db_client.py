@@ -26,4 +26,5 @@ def cancel_appointment(appointment_id: int):
     response = requests.delete(
         f"{DB_SERVICE_URL}/appointments/{appointment_id}"
     )
+    response.raise_for_status()
     return response.json()

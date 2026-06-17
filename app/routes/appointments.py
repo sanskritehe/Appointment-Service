@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from app.models import AppointmentCreate, AppointmentUpdate
 from app.services.booking_service import (
     book_appointment,
@@ -31,4 +31,11 @@ def update_appointment_by_id(appointment_id: int, req: AppointmentUpdate):
 # Cancel an appointment by ID
 @router.delete("/{appointment_id}")
 def cancel_appointment_by_id(appointment_id: int):
-    return cancel_booking(appointment_id)
+    try:
+        cancel_booking(appointment_id)
+        return {"message": "Appointment cancelled successfully"}
+    except Exception as e:
+        if "404" in str(e):
+            raise HTTPException(status_code=404, detail="Appointment not found")
+        else:
+            raise HTTPException(status_code=500, detail="Failed to cancel appointment")

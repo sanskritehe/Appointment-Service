@@ -12,4 +12,10 @@ def update_booking(appointment_id: int, data):
     return update_appointment(appointment_id, data)
 
 def cancel_booking(appointment_id: int):
-    return cancel_appointment(appointment_id)
+    try:
+        return cancel_appointment(appointment_id)
+    except Exception as e:
+        if "404" in str(e):
+            raise Exception("404")
+        else:
+            raise Exception("Failed to cancel appointment")
