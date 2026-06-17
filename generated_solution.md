@@ -1,3 +1,5 @@
+### FILE: app/graphql_schema.py
+```python
 from typing import List
 
 from fastapi import Depends
@@ -67,3 +69,4 @@ class AppointmentQuery:
             return list_appointments()
 
 Schema = StrawberrySchema(Query, Mutation)
+```
