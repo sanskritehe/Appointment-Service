@@ -1,29 +1,11 @@
-import requests
-from app.config import DB_SERVICE_URL
+from typing import Dict, Any, Optional
 
-def create_appointment(data: dict):
-    response = requests.post(
-        f"{DB_SERVICE_URL}/appointments",
-        params=data
-    )
-    response.raise_for_status()
-    return response.json()
+# Mock in-memory database storage for appointments
+_appointments: Dict[int, Dict[str, Any]] = {
+    1: {"id": 1, "user": "John Doe", "time": "2023-10-27T10:00:00", "status": "booked"},
+    2: {"id": 2, "user": "Jane Smith", "time": "2023-10-27T11:00:00", "status": "pending"},
+}
 
-def get_all_appointments():
-    response = requests.get(f"{DB_SERVICE_URL}/appointments")
-    response.raise_for_status()
-    return response.json()
-
-def update_appointment(appointment_id: int, data: dict):
-    response = requests.put(
-        f"{DB_SERVICE_URL}/appointments/{appointment_id}",
-        json=data
-    )
-    response.raise_for_status()
-    return response.json()
-
-def cancel_appointment(appointment_id: int):
-    response = requests.delete(
-        f"{DB_SERVICE_URL}/appointments/{appointment_id}"
-    )
-    return response.json()
+class DBClient:
+    def get_appointment_by_id(self, appointment_id: int) -> Optional[Dict[str, Any]]:
+        return _appointments.get(appointment_id)
