@@ -1,29 +1,10 @@
-import requests
-from app.config import DB_SERVICE_URL
+appointments_db: dict[int, dict] = {}
 
-def create_appointment(data: dict):
-    response = requests.post(
-        f"{DB_SERVICE_URL}/appointments",
-        params=data
-    )
-    response.raise_for_status()
-    return response.json()
 
-def get_all_appointments():
-    response = requests.get(f"{DB_SERVICE_URL}/appointments")
-    response.raise_for_status()
-    return response.json()
+def get_appointment(appointment_id: int):
+    return appointments_db.get(appointment_id)
 
-def update_appointment(appointment_id: int, data: dict):
-    response = requests.put(
-        f"{DB_SERVICE_URL}/appointments/{appointment_id}",
-        json=data
-    )
-    response.raise_for_status()
-    return response.json()
 
-def cancel_appointment(appointment_id: int):
-    response = requests.delete(
-        f"{DB_SERVICE_URL}/appointments/{appointment_id}"
-    )
-    return response.json()
+def remove_appointment(appointment_id: int):
+    if appointment_id in appointments_db:
+        del appointments_db[appointment_id]
