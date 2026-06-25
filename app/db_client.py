@@ -1,29 +1,41 @@
+from typing import List, Optional, Dict, Any
 import requests
-from app.config import DB_SERVICE_URL
+from app.config import settings
 
-def create_appointment(data: dict):
-    response = requests.post(
-        f"{DB_SERVICE_URL}/appointments",
-        params=data
-    )
-    response.raise_for_status()
-    return response.json()
 
-def get_all_appointments():
-    response = requests.get(f"{DB_SERVICE_URL}/appointments")
-    response.raise_for_status()
-    return response.json()
+def get_all_appointments() -> List[dict]:
+    try:
+        response = requests.get(f"{settings.DB_SERVICE_URL}/appointments")
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        raise RuntimeError(
+            f"Failed to fetch appointments from DB service: {str(e)}"
+        ) from e
 
-def update_appointment(appointment_id: int, data: dict):
-    response = requests.put(
-        f"{DB_SERVICE_URL}/appointments/{appointment_id}",
-        json=data
-    )
-    response.raise_for_status()
-    return response.json()
 
-def cancel_appointment(appointment_id: int):
-    response = requests.delete(
-        f"{DB_SERVICE_URL}/appointments/{appointment_id}"
-    )
-    return response.json()
+def get_appointment_by_id(appointment_id: int) -> Optional[dict]:
+    try:
+        response = requests.get(
+            f"{settings.DB_SERVICE_URL}/appointments/{appointment_id}"
+        )
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        raise RuntimeError(
+            f"Failed to fetch appointment from DB service: {str(e)}"
+        ) from e
+
+
+def update_appointment_data(appointment_id: int, data: Dict[str, Any]) -> None:
+    try:
+        response = requests.put(
+            f"{settings.DB_SERVICE_URL}/appointments/{appointment_id}", json=data
+        )
+        response.raise_for_status()
+    except requests.RequestException as e:
+        raise RuntimeError(
+            f"Failed to update appointment in DB service: {str(e)}"
+        ) from e
