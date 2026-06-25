@@ -1,14 +1,10 @@
-from pydantic import BaseModel
+from sqlalchemy import Column, Integer, String
+from app.database import Base
 
-class AppointmentCreate(BaseModel):
-    user: str
-    time: str
+class AppointmentStorage(Base):
+    __tablename__ = "appointments"
 
-class AppointmentUpdate(BaseModel):
-    time: str
-
-class AppointmentResponse(BaseModel):
-    id: int
-    user: str
-    time: str
-    status: str
+    id = Column(Integer, primary_key=True, index=True)
+    user = Column(String, index=True)
+    time = Column(String)
+    status = Column(String)
