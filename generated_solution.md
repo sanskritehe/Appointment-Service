@@ -1,3 +1,5 @@
+### FILE: app/db_client.py
+```python
 from typing import List, Optional, Dict, Any
 import requests
 from app.config import settings
@@ -39,3 +41,5 @@ def update_appointment_data(appointment_id: int, data: Dict[str, Any]) -> None:
         raise RuntimeError(
             f"Failed to update appointment in DB service: {str(e)}"
         ) from e
+
+```
