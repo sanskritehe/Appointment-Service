@@ -1,34 +1,40 @@
-from fastapi import APIRouter
-from app.models import AppointmentCreate, AppointmentUpdate
-from app.services.booking_service import (
-    book_appointment,
-    list_appointments,
-    update_booking,
-    cancel_booking
-)
+from fastapi import APIRouter, HTTPException, Path
+from app.models import AppointmentResponse
+from app.graphql_client import run_query
 
 router = APIRouter(prefix="/appointments", tags=["Appointment"])
 
 
-# Create a new appointment
-@router.post("/")
-def create_appointment(req: AppointmentCreate):
-    return book_appointment(req.dict())
+@router.get("/{appointment_id}", response_model=AppointmentResponse)
+def read_appointment(
+    appointment_id: int = Path(..., title="The ID of the appointment", gt=0),
+):
+    """
+    GET /appointments/{appointment_id}
+    Retrieves an appointment by ID.
 
+    Path Parameters:
+    - appointment_id (int): Positive integer representing the appointment ID.
 
-# Get all appointments
-@router.get("/")
-def get_appointments():
-    return list_appointments()
+    Responses:
+    - 200: Successful retrieval of the appointment.
+    - 404: Appointment not found.
+    """
+    existing_appointment = run_query(
+        """
+    query ($id: Int!) {
+        appointment(id: $id) {
+            id
+            user
+            time
+            status
+        }
+    }
+    """,
+        {"id": appointment_id},
+    )
 
+    if existing_appointment.get("data", {}).get("appointment") is None:
+        raise HTTPException(status_code=404, detail="Appointment not found")
 
-# Update an appointment by ID
-@router.put("/{appointment_id}")
-def update_appointment_by_id(appointment_id: int, req: AppointmentUpdate):
-    return update_booking(appointment_id, req.dict())
-
-
-# Cancel an appointment by ID
-@router.delete("/{appointment_id}")
-def cancel_appointment_by_id(appointment_id: int):
-    return cancel_booking(appointment_id)
+    return AppointmentResponse(**existing_appointment["data"]["appointment"])
