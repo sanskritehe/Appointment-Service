@@ -1,13 +1,16 @@
 from fastapi import FastAPI
-from app.routes.appointments import router as appointments_router
-from strawberry.fastapi import GraphQLRouter
-from app.graphql.schema import schema
+from routes.appointments import router
+from app.db_client import AppointmentDbClient
+from app.services.appointments import AppointmentService
 
-app = FastAPI(title="Appointment Service")
+app = FastAPI()
 
-# Include Appointments routes
-app.include_router(appointments_router)
+db_client = AppointmentDbClient()
+appointment_service = AppointmentService(db_client)
 
-# Include GraphQL router
-graphql_app = GraphQLRouter(schema)
-app.include_router(graphql_app, prefix="/graphql")
+
+def get_appointment_service() -> AppointmentService:
+    return appointment_service
+
+
+app.include_router(router)
