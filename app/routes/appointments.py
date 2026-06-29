@@ -1,40 +1,29 @@
-from fastapi import APIRouter, HTTPException, Path
-from app.models import AppointmentResponse
-from app.graphql_client import run_query
+from fastapi import APIRouter, Path, Depends, HTTPException
+from pydantic import BaseModel
+from app.services.appointments import AppointmentService
+from main import get_appointment_service
 
-router = APIRouter(prefix="/appointments", tags=["Appointment"])
+router = APIRouter()
 
 
-@router.get("/{appointment_id}", response_model=AppointmentResponse)
-def read_appointment(
-    appointment_id: int = Path(..., title="The ID of the appointment", gt=0),
+class AppointmentResponse(BaseModel):
+    id: int
+    user: str
+    time: str
+    status: str
+
+
+@router.get("/appointments/{id}", response_model=AppointmentResponse)
+async def get_appointment(
+    id: int = Path(..., gt=0),
+    appointment_service: AppointmentService = Depends(get_appointment_service),
 ):
-    """
-    GET /appointments/{appointment_id}
-    Retrieves an appointment by ID.
-
-    Path Parameters:
-    - appointment_id (int): Positive integer representing the appointment ID.
-
-    Responses:
-    - 200: Successful retrieval of the appointment.
-    - 404: Appointment not found.
-    """
-    existing_appointment = run_query(
-        """
-    query ($id: Int!) {
-        appointment(id: $id) {
-            id
-            user
-            time
-            status
-        }
-    }
-    """,
-        {"id": appointment_id},
-    )
-
-    if existing_appointment.get("data", {}).get("appointment") is None:
+    appointment: dict = appointment_service.get_appointment(id)
+    if appointment is None:
         raise HTTPException(status_code=404, detail="Appointment not found")
-
-    return AppointmentResponse(**existing_appointment["data"]["appointment"])
+    return AppointmentResponse(
+        id=int(appointment["id"]),
+        user=appointment["user"],
+        time=appointment["time"],
+        status=appointment["status"],
+    )
