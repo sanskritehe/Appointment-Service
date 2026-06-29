@@ -1,13 +1,17 @@
-from fastapi import FastAPI
-from app.routes.appointments import router as appointments_router
-from strawberry.fastapi import GraphQLRouter
-from app.graphql.schema import schema
+from fastapi import FastAPI, Depends, HTTPException
+from typing import Optional
+from pydantic import BaseModel
+from db_client import Session
+from services import AppointmentService
 
-app = FastAPI(title="Appointment Service")
+app = FastAPI()
 
-# Include Appointments routes
-app.include_router(appointments_router)
+def get_appointment_service() -> AppointmentService:
+    return AppointmentService()
 
-# Include GraphQL router
-graphql_app = GraphQLRouter(schema)
-app.include_router(graphql_app, prefix="/graphql")
+@app.get("/appointments/{id}")
+async def get_appointment(id: int, appointment_service: AppointmentService = Depends(get_appointment_service)):
+    appointment = appointment_service.get_appointment(id)
+    if appointment is None:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    return appointment
