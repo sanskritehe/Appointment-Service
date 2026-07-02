@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Path
 from app.models import AppointmentResponse
-from app.services.booking_service import get_appointment_by_id, delete_appointment
+from app.db_client import delete_appointment
 from app.graphql_client import run_query
 
 router = APIRouter(prefix="/appointments", tags=["Appointment"])
@@ -36,9 +36,18 @@ def read_appointment(
 def delete_appointment_endpoint(
     appointment_id: int = Path(..., title="The ID of the appointment", gt=0),
 ):
-    appointment = get_appointment_by_id(appointment_id)
+    appointment = run_query(
+        """
+    query ($id: Int!) {
+        appointment(id: $id) {
+            id
+        }
+    }
+    """,
+        {"id": appointment_id},
+    )
 
-    if appointment is None:
+    if appointment.get("data", {}).get("appointment") is None:
         raise HTTPException(status_code=404, detail={"detail": "Appointment not found"})
 
     delete_appointment(appointment_id)
