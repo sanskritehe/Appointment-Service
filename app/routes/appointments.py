@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Path
 from app.models import AppointmentResponse
-from app.services.booking_service import get_appointment_by_id, delete_appointment
+from app.db_client import get_appointment_by_id, delete_appointment
 from app.graphql_client import run_query
 
 router = APIRouter(prefix="/appointments", tags=["Appointment"])
