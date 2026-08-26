@@ -1,0 +1,10 @@
+from sqlalchemy import Column, Integer, String, DateTime
+from app.database import Base
+
+
+class Appointment(Base):
+    __tablename__ = "appointments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user = Column(String, nullable=False)
+    time = Column(DateTime, nullable=False)
